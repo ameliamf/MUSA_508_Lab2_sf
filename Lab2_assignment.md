@@ -128,5 +128,3 @@ st_crs(acsTractsPHL.2019.sf_WGS84)
 11. Email your lab instructor with a link!
 
 12. Congrats! You made a map in code!
-
-## Load data from {tidycensus}
