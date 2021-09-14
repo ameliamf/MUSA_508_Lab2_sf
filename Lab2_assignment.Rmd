@@ -1,7 +1,7 @@
 ---
 title: "Lab2_assignment"
-author: "Matt Harris"
-date: "9/8/2021"
+author: "Amelia Marcantonio-Fields"
+date: "9/13/2021"
 output: github_document
 editor_options: 
   markdown: 
@@ -13,6 +13,8 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r setup_package, warning = FALSE, message = FALSE}
+install.packages("viridis")
+library(viridis)
 library(tidyverse)
 library(tidycensus)
 library(sf)
@@ -32,6 +34,38 @@ Steps in this assignment:
 2.  Find two new variables from the 2019 ACS data to load.
     Use `vars <- load_variables(2019, "acs5")` and `View(vars)` to see all of the variable from that ACS.
     Note that you should not pick something really obscure like count_38yo_cabinetmakers because you will get lots of NAs.
+    
+```{r acs_vars, cache = FALSE, message = FALSE, warning = FALSE, results=FALSE}
+
+census_api_key("9a4eb0449cd787a44a9402bccce6e20769078384",overwrite = TRUE)
+
+vars <- load_variables(2019, "acs5")
+
+view(vars)
+
+lab2_acs_vars <- c("B01001_001E", # ACS total Pop Estimate
+                    "B16010_041E", # Total Bachelor's Degree or Higher
+                    "B19019_001E") # Median HH Income (2019 $)
+
+myTracts2 <- c("42101000803",
+               "42101000804",
+               "42101001202")
+
+acsTractsPHL.2019.sf <- get_acs(geography = "tract",
+                             year = 2019, 
+                             variables = lab2_acs_vars, 
+                             geometry = TRUE, 
+                             state = "PA", 
+                             county = "Philadelphia", 
+                             output = "wide") %>% 
+  dplyr::select (GEOID, NAME, all_of(lab2_acs_vars)) %>%
+  rename (total_pop.2019 = B01001_001E,
+          total_BDorhigher.2019 = B16010_041E,
+          med_HH_income.2019 = B19019_001E) %>%
+  mutate(pctBDorhigher.2019 = total_BDorhigher.2019/total_pop.2019) %>%
+  mutate(Rittenhouse = ifelse(GEOID %in% myTracts2, "RITTENHOUSE", "REST OF PHILADELPHIA"))
+```
+
 
 3.  Pick a neighborhood of the City to map.
     You will need to do some googling to figure this out.
@@ -39,13 +73,49 @@ Steps in this assignment:
     This is just like what was done in the exercise, but with a different neighborhood of your choice.
     Remember that all GEOIDs need to be 10-characters long.
 
+
 4.  In the first code chunk you will do that above and then edit the call-outs in the dplyr pipe sequence to `rename` and `mutate` your data.
 
 5.  You will transform the data to `WGS84` by adding the correct EPSG code.
     This is discussed heavily in the exercise.
 
+```{r}
+acsTractsPHL.2019.sf_WGS84 <- acsTractsPHL.2019.sf %>% 
+  st_transform(crs = "EPSG:4326")
+
+st_crs(acsTractsPHL.2016.sf_WGS84)
+```
+
 6.  You will produce a map of one of the variables you picked and highlight the neighborhood you picked.
     There are call-out within the `ggplot` code for you to edit.
+    
+```{r ggplot_geom_sf, warning = FALSE, echo = FALSE}
+
+ggplot()+
+  geom_sf(data = acsTractsPHL.2019.sf, aes(fill = pctBDorhigher.2019),
+          color = "transparent")+
+  geom_sf(data = acsTractsPHL.2019.sf_WGS84 %>%
+            filter(Rittenhouse == "RITTENHOUSE") %>%
+            st_union(),
+          color = "white",
+          fill = "transparent")+
+ scale_fill_viridis(
+          alpha = 1,
+          begin = 1,
+          end = 0,
+          direction = 1,
+          discrete = FALSE,
+          option = "F",
+          labels = scales::percent,
+          name = "% of Population", 
+          limits = c(0, 1)) +
+ # Bonus to figure out different color ramps with scale_fill_viridis()
+  labs(
+    x = "Longitude", y = "Latitude", fill = "",
+    title = "Bachelor's Degree or Higher by Census Tract",
+    subtitle = "",
+    caption = "Data: US Census Bureau, ACS 2019 5-year estimates")
+```
 
 7.  You can run the code chunks and lines of code as you edit to make sure everything works.
 
@@ -62,48 +132,3 @@ Steps in this assignment:
     You made a map in code!
 
 ## Load data from {tidycensus}
-
-```{r acs_vars, cache = TRUE, message = FALSE, warning = FALSE, results=FALSE}
-acs_vars <- c( "[PUT YOUR VAR CODES HERE]")
-
-myTracts <- c("[YOUR TRACTS GEOIDs HERE]")
-
-acsTractsPHL.2019.sf <- get_acs(geography = "tract",
-                             year = 2019,
-                             variables = acs_vars,
-                             geometry = TRUE,
-                             state  = "PA",
-                             county = "Philadelphia",
-                             output = "wide") %>%
-  dplyr::select (GEOID, NAME, all_of(paste0(acs_vars,"E"))) %>%
-  rename ("[RENAME YOUR VARIABLES HERE]") %>%
-  mutate(Neighborhood = ifelse(GEOID %in% myTracts,
-                               "[YOUR NEIGHBORHOOD NAME HERE]",
-                               "REST OF PHILADELPHIA"))
-```
-
-## Transform to WGS84 with {sf}
-
-```{r}
-acsTractsPHL.2019.sf <- acsTractsPHL.2019.sf %>% 
-  st_transform(crs = "[PUT THE WGS84 EPSG CODE HERE]")
-```
-
-## Plot with {ggplot2}
-
-```{r ggplot_geom_sf, warning = FALSE, echo = FALSE}
-ggplot()+
-  geom_sf(data = acsTractsPHL.2019.sf, aes(fill = "[YOUR VARIABLE NAME HERE]"),
-          color = "transparent")+
-  geom_sf(data = acsTractsPHL.2019.sf %>%
-            filter(Neighborhood == "[YOUR NEIGHBORHOOD NAME HERE]") %>%
-            st_union(),
-          color = "white",
-          fill = "transparent")+
-  # Bonus to figure out different color ramps with scale_fill_viridis()
-  labs(
-    title = "[YOUR TITLE HERE]",
-    subtitle = "[YOUR SUBTITLE HERE]",
-    caption = "[YOUR CAPTION HERE]")
-
-```
