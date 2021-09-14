@@ -92,7 +92,7 @@ st_crs(acsTractsPHL.2019.sf_WGS84)
 ```{r ggplot_geom_sf, warning = FALSE, echo = FALSE}
 
 ggplot()+
-  geom_sf(data = acsTractsPHL.2019.sf, aes(fill = pctBDorhigher.2019),
+  geom_sf(data = acsTractsPHL.2019.sf_WGS84, aes(fill = pctBDorhigher.2019),
           color = "transparent")+
   geom_sf(data = acsTractsPHL.2019.sf_WGS84 %>%
             filter(Rittenhouse == "RITTENHOUSE") %>%
