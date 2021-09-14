@@ -13,10 +13,10 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r setup_package, warning = FALSE, message = FALSE}
-install.packages("viridis")
 library(viridis)
 library(tidyverse)
 library(tidycensus)
+library(dplyr)
 library(sf)
 library(tmap) # mapping, install if you don't have it
 set.seed(717)
@@ -83,7 +83,7 @@ acsTractsPHL.2019.sf <- get_acs(geography = "tract",
 acsTractsPHL.2019.sf_WGS84 <- acsTractsPHL.2019.sf %>% 
   st_transform(crs = "EPSG:4326")
 
-st_crs(acsTractsPHL.2016.sf_WGS84)
+st_crs(acsTractsPHL.2019.sf_WGS84)
 ```
 
 6.  You will produce a map of one of the variables you picked and highlight the neighborhood you picked.
@@ -130,5 +130,3 @@ ggplot()+
 
 12. Congrats!
     You made a map in code!
-
-## Load data from {tidycensus}
